@@ -12,7 +12,7 @@ body {
   justify-content: center;
   align-items: center;
   background: url("bg.jpg") no-repeat center center / cover;
-  overflow: hidden;
+  overflow-x: hidden;
   padding: 10px;
 }
 
