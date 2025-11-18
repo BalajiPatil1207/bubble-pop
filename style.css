@@ -315,7 +315,7 @@ body {
     margin-bottom: 15px;
     padding: 10px;
     height: 350px;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
   }
 }
