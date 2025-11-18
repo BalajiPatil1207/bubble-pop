@@ -307,6 +307,7 @@ body {
   .card {
     height: auto;
     padding: 15px;
+    overflow-y: scroll;
   }
 
   .board-section {
@@ -314,7 +315,6 @@ body {
     margin-top: 15px;
     margin-bottom: 15px;
     padding: 10px;
-    overflow-y: scroll;
   }
 }
 
