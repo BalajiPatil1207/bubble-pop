@@ -315,6 +315,7 @@ body {
     margin-top: 15px;
     margin-bottom: 15px;
     padding: 10px;
+    overflow-y: scroll;
   }
 }
 
