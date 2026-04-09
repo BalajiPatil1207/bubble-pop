@@ -17,10 +17,15 @@
 </head>
 
 <body>
+    <!-- Background VFX -->
+    <div class="vfx-bg" id="vfxBg"></div>
 
     <div class="container">
-        <!-- Control Panel (Floating) -->
+        <!-- Control Panel -->
         <div class="control-panel">
+            <button class="icon-btn" id="langBtn" title="Change Language">
+                <span id="langCode">EN</span>
+            </button>
             <button class="icon-btn" id="soundBtn" title="Toggle Sound">
                 <i data-lucide="volume-2"></i>
             </button>
@@ -33,19 +38,19 @@
             <!-- Status Section -->
             <div class="top-section">
                 <div class="hit-display">
-                    HIT
+                    <label data-i18n="hit">HIT</label>
                     <span id="hitNum">?</span>
                 </div>
                 <div class="timer-display">
-                    TIME
+                    <label data-i18n="time">TIME</label>
                     <span id="timerVal">60</span>
                 </div>
                 <div class="score-display">
-                    SCORE
+                    <label data-i18n="score">SCORE</label>
                     <span id="scoreVal">0</span>
                 </div>
                 <div class="combo-display">
-                    COMBO
+                    <label data-i18n="combo">COMBO</label>
                     <span id="comboVal">x1</span>
                 </div>
             </div>
