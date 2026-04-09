@@ -95,19 +95,26 @@ function toggleMute() {
     localStorage.setItem('bubblePop_muted', gameState.isMuted);
     updateMuteUI();
     
+    // Explicitly handle bg music on manual toggle
     if (gameState.isPlaying && !gameState.isPaused) {
-        if (gameState.isMuted) elements.sounds.bg.pause();
-        else elements.sounds.bg.play();
+        if (gameState.isMuted) {
+            elements.sounds.bg.pause();
+        } else {
+            elements.sounds.bg.play().catch(e => console.log('Audio blocked'));
+        }
     }
 }
 
 function updateMuteUI() {
-    const icon = gameState.isMuted ? 'volume-x' : 'volume-2';
-    elements.soundBtn.querySelector('i').setAttribute('data-lucide', icon);
+    const iconName = gameState.isMuted ? 'volume-x' : 'volume-2';
+    // Replace the entire button content to ensure Lucide can re-render it
+    elements.soundBtn.innerHTML = `<i data-lucide="${iconName}"></i>`;
     lucide.createIcons();
     
-    // Set volumes
-    Object.values(elements.sounds).forEach(s => s.muted = gameState.isMuted);
+    // Apply mute state to all audio elements
+    Object.values(elements.sounds).forEach(s => {
+        if (s) s.muted = gameState.isMuted;
+    });
 }
 
 // Game Logic
