@@ -2,56 +2,86 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bubble Pop | Professional Number Hit Game</title>
-  <meta name="description" content="A fast-paced, professional number hit game with premium glassmorphism design and responsive gameplay.">
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Pop | Pro Arcade Game</title>
+    <meta name="description" content="A fast-paced, professional number hit game with premium glassmorphism design and responsive gameplay.">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <div class="container">
-    <div class="card">
-      <!-- Status Section -->
-      <div class="top-section">
-        <div class="hit-display">
-          HIT
-          <span id="hitNum">0</span>
+    <div class="container">
+        <!-- Control Panel (Floating) -->
+        <div class="control-panel">
+            <button class="icon-btn" id="soundBtn" title="Toggle Sound">
+                <i data-lucide="volume-2"></i>
+            </button>
+            <button class="icon-btn" id="pauseBtn" title="Pause Game" style="display: none;">
+                <i data-lucide="pause"></i>
+            </button>
         </div>
-        <div class="timer-display">
-          TIME
-          <span id="timerVal">60</span>
-        </div>
-        <div class="score-display">
-          SCORE
-          <span id="scoreVal">0</span>
-        </div>
-        <div class="high-score-display">
-          BEST
-          <span id="highScoreVal">0</span>
-        </div>
-      </div>
 
-      <!-- Game Board -->
-      <div class="board-section" id="gameBoard">
-        <!-- Start Screen -->
-        <div class="start-screen" id="startScreen">
-          <h1>Bubble Pop</h1>
-          <button class="btn" id="startBtn">Play Now</button>
+        <div class="card">
+            <!-- Status Section -->
+            <div class="top-section">
+                <div class="hit-display">
+                    HIT
+                    <span id="hitNum">?</span>
+                </div>
+                <div class="timer-display">
+                    TIME
+                    <span id="timerVal">60</span>
+                </div>
+                <div class="score-display">
+                    SCORE
+                    <span id="scoreVal">0</span>
+                </div>
+                <div class="combo-display">
+                    COMBO
+                    <span id="comboVal">x1</span>
+                </div>
+            </div>
+
+            <!-- Game Board -->
+            <div class="board-section" id="gameBoard">
+                <!-- Start Screen -->
+                <div class="start-screen" id="startScreen">
+                    <h1>Bubble Pop</h1>
+                    <p>Hit the matching numbers to score combos!</p>
+                    <button class="btn" id="startBtn">Play Now</button>
+                    <div class="best-score-badge">
+                        Best: <span id="bestScore">0</span>
+                    </div>
+                </div>
+
+                <!-- Pause Overlay -->
+                <div class="pause-screen" id="pauseScreen" style="display: none;">
+                    <h2>Game Paused</h2>
+                    <button class="btn" id="resumeBtn">Resume</button>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Audio Assets -->
-  <audio id="popSound" src="pop-402324.mp3"></audio>
-  <audio id="wrongSound" src="wrongnumber.mp3"></audio>
-  <audio id="bgMusic" src="gameSong.mp3" loop></audio>
-  <audio id="gameOverSound" src="game-over.mp3"></audio>
+    <!-- Audio Assets -->
+    <audio id="popSound" src="pop-402324.mp3"></audio>
+    <audio id="wrongSound" src="wrongnumber.mp3"></audio>
+    <audio id="bgMusic" src="gameSong.mp3" loop></audio>
+    <audio id="gameOverSound" src="game-over.mp3"></audio>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // Initialize icons
+        lucide.createIcons();
+    </script>
 </body>
 
 </html>

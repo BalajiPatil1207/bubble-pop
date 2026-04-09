@@ -1,11 +1,12 @@
 // Configuration & State
 const CONFIG = {
     GAME_DURATION: 60,
-    BUBBLE_SIZE: 65, // Standard size on desktop
+    BUBBLE_SIZE: 65,
     SCORE_HIT: 10,
     SCORE_MISS: -5,
-    MIN_BUBBLES: 12, // For small screens
-    AUTO_HINT_TIME: 3000
+    MIN_BUBBLES: 12,
+    AUTO_HINT_TIME: 3500,
+    COMBO_TIMEOUT: 2000 // Reset combo if no hit for 2s
 };
 
 let gameState = {
@@ -14,8 +15,15 @@ let gameState = {
     currentHit: 0,
     highScore: parseInt(localStorage.getItem('bubblePop_highScore')) || 0,
     isPlaying: false,
+    isPaused: false,
+    isMuted: localStorage.getItem('bubblePop_muted') === 'true',
+    combo: 1,
+    maxCombo: 1,
+    hits: 0,
+    misses: 0,
     timerInterval: null,
-    hintTimeout: null
+    hintTimeout: null,
+    comboTimeout: null
 };
 
 // DOM Elements
@@ -23,10 +31,20 @@ const elements = {
     hitDisplay: document.getElementById('hitNum'),
     timerVal: document.getElementById('timerVal'),
     scoreVal: document.getElementById('scoreVal'),
-    highScoreVal: document.getElementById('highScoreVal'),
+    comboVal: document.getElementById('comboVal'),
+    highScoreVal: document.getElementById('bestScore'),
     gameBoard: document.getElementById('gameBoard'),
     startScreen: document.getElementById('startScreen'),
+    pauseScreen: document.getElementById('pauseScreen'),
     startBtn: document.getElementById('startBtn'),
+    pauseBtn: document.getElementById('pauseBtn'),
+    soundBtn: document.getElementById('soundBtn'),
+    resumeBtn: document.getElementById('resumeBtn'),
+    statusSpans: {
+        score: document.getElementById('scoreVal'),
+        timer: document.getElementById('timerVal'),
+        hit: document.getElementById('hitNum')
+    },
     sounds: {
         pop: document.getElementById('popSound'),
         wrong: document.getElementById('wrongSound'),
@@ -39,24 +57,82 @@ const elements = {
 function init() {
     elements.highScoreVal.textContent = gameState.highScore;
     elements.startBtn.addEventListener('click', startGame);
+    elements.pauseBtn.addEventListener('click', togglePause);
+    elements.resumeBtn.addEventListener('click', togglePause);
+    elements.soundBtn.addEventListener('click', toggleMute);
+
+    updateMuteUI();
+    
     window.addEventListener('resize', () => {
-        if (gameState.isPlaying) generateBubbles();
+        if (gameState.isPlaying && !gameState.isPaused) generateBubbles();
     });
+}
+
+// Control Handlers
+function togglePause() {
+    if (!gameState.isPlaying) return;
+
+    gameState.isPaused = !gameState.isPaused;
+    
+    if (gameState.isPaused) {
+        clearInterval(gameState.timerInterval);
+        clearTimeout(gameState.hintTimeout);
+        elements.pauseScreen.style.display = 'flex';
+        elements.pauseBtn.querySelector('i').setAttribute('data-lucide', 'play');
+        elements.sounds.bg.pause();
+    } else {
+        elements.pauseScreen.style.display = 'none';
+        elements.pauseBtn.querySelector('i').setAttribute('data-lucide', 'pause');
+        if (!gameState.isMuted) elements.sounds.bg.play();
+        startTimer();
+        resetHint();
+    }
+    lucide.createIcons();
+}
+
+function toggleMute() {
+    gameState.isMuted = !gameState.isMuted;
+    localStorage.setItem('bubblePop_muted', gameState.isMuted);
+    updateMuteUI();
+    
+    if (gameState.isPlaying && !gameState.isPaused) {
+        if (gameState.isMuted) elements.sounds.bg.pause();
+        else elements.sounds.bg.play();
+    }
+}
+
+function updateMuteUI() {
+    const icon = gameState.isMuted ? 'volume-x' : 'volume-2';
+    elements.soundBtn.querySelector('i').setAttribute('data-lucide', icon);
+    lucide.createIcons();
+    
+    // Set volumes
+    Object.values(elements.sounds).forEach(s => s.muted = gameState.isMuted);
 }
 
 // Game Logic
 function startGame() {
     gameState.isPlaying = true;
+    gameState.isPaused = false;
     gameState.score = 0;
     gameState.time = CONFIG.GAME_DURATION;
+    gameState.combo = 1;
+    gameState.maxCombo = 1;
+    gameState.hits = 0;
+    gameState.misses = 0;
     
     elements.scoreVal.textContent = gameState.score;
     elements.timerVal.textContent = gameState.time;
+    elements.comboVal.textContent = 'x1';
     elements.startScreen.style.display = 'none';
+    elements.pauseBtn.style.display = 'flex';
+    elements.pauseBtn.querySelector('i').setAttribute('data-lucide', 'pause');
+    lucide.createIcons();
     
-    // Play BG music
-    elements.sounds.bg.currentTime = 0;
-    elements.sounds.bg.play().catch(e => console.log('Audio autoplay blocked'));
+    if (!gameState.isMuted) {
+        elements.sounds.bg.currentTime = 0;
+        elements.sounds.bg.play().catch(e => console.log('Autoplay check'));
+    }
 
     newHit();
     generateBubbles();
@@ -82,15 +158,11 @@ function startTimer() {
 }
 
 function generateBubbles() {
-    // Clear board but keep start/end screens if they exist
     const itemsToRemove = elements.gameBoard.querySelectorAll('.bubble, .end-screen');
     itemsToRemove.forEach(item => item.remove());
 
-    // Calculate how many bubbles fit
     const boardWidth = elements.gameBoard.clientWidth;
     const boardHeight = elements.gameBoard.clientHeight;
-    
-    // Bubble padding + size (approx)
     const bubbleArea = Math.pow(CONFIG.BUBBLE_SIZE + 10, 2); 
     const boardArea = boardWidth * boardHeight;
     
@@ -123,7 +195,7 @@ function generateBubbles() {
 }
 
 function handleBubbleClick(num, event) {
-    if (!gameState.isPlaying) return;
+    if (!gameState.isPlaying || gameState.isPaused) return;
 
     const rect = event.target.getBoundingClientRect();
     const boardRect = elements.gameBoard.getBoundingClientRect();
@@ -133,28 +205,49 @@ function handleBubbleClick(num, event) {
 
     if (num === gameState.currentHit) {
         // Success
-        gameState.score += CONFIG.SCORE_HIT;
+        gameState.hits++;
+        const points = CONFIG.SCORE_HIT * gameState.combo;
+        gameState.score += points;
+        
+        if (gameState.combo > 1) {
+            showComboPop(x, y, `x${gameState.combo}`);
+        }
+        
+        gameState.combo++;
+        if (gameState.combo > gameState.maxCombo) gameState.maxCombo = gameState.combo;
+        
         playSound('pop');
         createParticles(x, y, color);
-        
-        // Ripple effect on board (optional)
         
         checkHighScore();
         newHit();
         generateBubbles();
+        
+        // Reset combo timeout
+        clearTimeout(gameState.comboTimeout);
+        gameState.comboTimeout = setTimeout(() => {
+            gameState.combo = 1;
+            elements.comboVal.textContent = 'x1';
+        }, CONFIG.COMBO_TIMEOUT);
+
     } else {
         // Fail
+        gameState.misses++;
+        gameState.combo = 1;
         gameState.score = Math.max(0, gameState.score + CONFIG.SCORE_MISS);
         playSound('wrong');
-        // Shake animation could be added here
+        
         event.target.style.animation = 'none';
-        setTimeout(() => event.target.style.animation = 'shake 0.3s', 10);
+        void event.target.offsetWidth; // Trigger reflow
+        event.target.style.animation = 'shake 0.3s';
     }
     
     elements.scoreVal.textContent = gameState.score;
+    elements.comboVal.textContent = `x${gameState.combo}`;
 }
 
 function playSound(type) {
+    if (gameState.isMuted) return;
     const sound = elements.sounds[type];
     if (sound) {
         sound.currentTime = 0;
@@ -184,10 +277,19 @@ function createParticles(x, y, color) {
     }
 }
 
+function showComboPop(x, y, text) {
+    const pop = document.createElement('div');
+    pop.className = 'combo-pop';
+    pop.textContent = text;
+    pop.style.left = `${x}px`;
+    pop.style.top = `${y - 40}px`;
+    elements.gameBoard.appendChild(pop);
+    pop.addEventListener('animationend', () => pop.remove());
+}
+
 function checkHighScore() {
     if (gameState.score > gameState.highScore) {
         gameState.highScore = gameState.score;
-        elements.highScoreVal.textContent = gameState.highScore;
         localStorage.setItem('bubblePop_highScore', gameState.highScore);
     }
 }
@@ -195,6 +297,7 @@ function checkHighScore() {
 function resetHint() {
     clearTimeout(gameState.hintTimeout);
     gameState.hintTimeout = setTimeout(() => {
+        if (!gameState.isPlaying || gameState.isPaused) return;
         const bubbles = elements.gameBoard.querySelectorAll('.bubble');
         bubbles.forEach(b => {
             if (parseInt(b.textContent) === gameState.currentHit) {
@@ -213,22 +316,46 @@ function endGame() {
     gameState.isPlaying = false;
     clearInterval(gameState.timerInterval);
     clearTimeout(gameState.hintTimeout);
+    clearTimeout(gameState.comboTimeout);
     elements.sounds.bg.pause();
     playSound('gameOver');
+
+    elements.pauseBtn.style.display = 'none';
 
     // Remove bubbles
     const bubbles = elements.gameBoard.querySelectorAll('.bubble');
     bubbles.forEach(b => b.remove());
 
-    // Show end screen
+    const accuracy = gameState.hits + gameState.misses > 0 
+        ? Math.round((gameState.hits / (gameState.hits + gameState.misses)) * 100) 
+        : 0;
+
+    // Show end screen with stats
     const endScreen = document.createElement('div');
     endScreen.className = 'end-screen';
     endScreen.innerHTML = `
         <div class="end-card">
-            <h2>Game Over!</h2>
-            <p>Score: <span>${gameState.score}</span></p>
+            <h2>Game Over</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <label>FINAL SCORE</label>
+                    <value>${gameState.score}</value>
+                </div>
+                <div class="stat-item">
+                    <label>BEST SCORE</label>
+                    <value>${gameState.highScore}</value>
+                </div>
+                <div class="stat-item">
+                    <label>ACCURACY</label>
+                    <value>${accuracy}%</value>
+                </div>
+                <div class="stat-item">
+                    <label>MAX COMBO</label>
+                    <value>x${gameState.maxCombo}</value>
+                </div>
+            </div>
             <div class="btn-group">
-                <button class="btn" onclick="location.reload()">Home</button>
+                <button class="btn" onclick="location.reload()">Menu</button>
                 <button class="btn" id="restartBtn">Play Again</button>
             </div>
         </div>

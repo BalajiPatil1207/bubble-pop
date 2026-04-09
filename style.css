@@ -3,6 +3,7 @@
 :root {
     --primary: #dc22f8;
     --primary-glow: #f047ff;
+    --accent: #00f2fe;
     --bg-dark: #0f172a;
     --text-white: #ffffff;
     --glass-bg: rgba(255, 255, 255, 0.1);
@@ -46,8 +47,47 @@ body::before {
     max-height: 850px;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
+/* --- Control Panel --- */
+.control-panel {
+    position: absolute;
+    top: -10px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    gap: 10px;
+}
+
+.icon-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 12px;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: var(--transition-smooth);
+    box-shadow: var(--shadow-lg);
+}
+
+.icon-btn:hover {
+    background: var(--primary);
+    transform: translateY(-2px);
+    border-color: var(--primary-glow);
+}
+
+.icon-btn i {
+    width: 22px;
+    height: 22px;
+}
+
+/* --- Main Card --- */
 .card {
     background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
@@ -60,6 +100,7 @@ body::before {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    margin-top: 40px;
 }
 
 .top-section {
@@ -73,7 +114,7 @@ body::before {
     background: var(--glass-bg);
     padding: 1rem 0.5rem;
     border-radius: 1rem;
-    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    font-size: clamp(0.8rem, 1.2vw, 1rem);
     font-weight: 700;
     text-align: center;
     border: 1px solid var(--glass-border);
@@ -87,8 +128,12 @@ body::before {
 
 .top-section div span {
     font-family: 'Outfit', sans-serif;
-    font-size: clamp(1.2rem, 2vw, 1.8rem);
+    font-size: clamp(1.1rem, 1.8vw, 1.6rem);
     color: var(--primary-glow);
+}
+
+.combo-display span {
+    color: var(--accent) !important;
 }
 
 .top-section div:hover {
@@ -154,32 +199,39 @@ body::before {
     filter: brightness(0.8);
 }
 
-/* --- Controls --- */
-.start-screen {
+/* --- Overlays --- */
+.start-screen, .pause-screen {
     position: absolute;
     inset: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(12px);
     z-index: 10;
     border-radius: 1.5rem;
     text-align: center;
     padding: 2rem;
 }
 
-.start-screen h1 {
+.start-screen h1, .pause-screen h2 {
     font-family: 'Outfit', sans-serif;
     font-size: clamp(2.5rem, 6vw, 4rem);
     font-weight: 900;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     background: linear-gradient(to bottom, #fff, var(--primary));
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     text-transform: uppercase;
+}
+
+.best-score-badge {
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+    color: var(--accent);
+    font-weight: 600;
 }
 
 .btn {
@@ -195,6 +247,7 @@ body::before {
     box-shadow: 0 10px 20px rgba(220, 34, 248, 0.3);
     text-transform: uppercase;
     letter-spacing: 1px;
+    margin-top: 1rem;
 }
 
 .btn:hover {
@@ -217,35 +270,67 @@ body::before {
 .end-card {
     background: var(--glass-bg);
     backdrop-filter: blur(20px);
-    padding: 3rem;
+    padding: clamp(1.5rem, 4vw, 3rem);
     border-radius: 2rem;
     border: 1px solid var(--glass-border);
     text-align: center;
+    width: 90%;
+    max-width: 500px;
     animation: slideUp 0.5s ease-out;
 }
 
 .end-card h2 {
-    font-size: 3rem;
+    font-size: clamp(2rem, 5vw, 3rem);
     margin-bottom: 1rem;
     color: var(--primary-glow);
 }
 
-.end-card p {
-    font-size: 1.5rem;
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
     margin-bottom: 2rem;
+}
+
+.stat-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
+.stat-item label {
+    display: block;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.25rem;
+}
+
+.stat-item value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent);
 }
 
 .btn-group {
     display: flex;
     gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
 }
 
+/* --- Animations --- */
 @keyframes slideUp {
     from { transform: translateY(50px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
 
-/* --- Particles --- */
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
 .particle {
     position: absolute;
     width: 6px;
@@ -260,11 +345,21 @@ body::before {
     100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
 }
 
-@keyframes shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
+.combo-pop {
+    position: absolute;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent);
+    pointer-events: none;
+    animation: combo-float 1s ease-out forwards;
+    z-index: 50;
+}
+
+@keyframes combo-float {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+    100% { transform: translateY(-100px) scale(1.5); opacity: 0; }
 }
 
 /* --- Responsiveness --- */
