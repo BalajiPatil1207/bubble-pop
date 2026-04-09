@@ -1,235 +1,245 @@
-let numberElement = document.querySelector(".number");
-let timeElement = document.querySelector(".timer");
-let scoreElement = document.querySelector(".score");
-let boardElement = document.querySelector(".board-section");
-let startBtn = document.querySelector(".start-btn");
-let highScore = document.querySelector(".highScore");
-let highScoreText = document.getElementById("highScoreValue");
+// Configuration & State
+const CONFIG = {
+    GAME_DURATION: 60,
+    BUBBLE_SIZE: 65, // Standard size on desktop
+    SCORE_HIT: 10,
+    SCORE_MISS: -5,
+    MIN_BUBBLES: 12, // For small screens
+    AUTO_HINT_TIME: 3000
+};
 
-let popSound = new Audio("pop-402324.mp3");
-let wrongSound = new Audio("wrongnumber.mp3");
-let bgMusic = new Audio("gameSong.mp3");
-let gameOverSound = new Audio("game-over.mp3");
+let gameState = {
+    score: 0,
+    time: CONFIG.GAME_DURATION,
+    currentHit: 0,
+    highScore: parseInt(localStorage.getItem('bubblePop_highScore')) || 0,
+    isPlaying: false,
+    timerInterval: null,
+    hintTimeout: null
+};
 
-let score = 0;
-let time = 60;
-let currentHit;
-let timerInterval;
+// DOM Elements
+const elements = {
+    hitDisplay: document.getElementById('hitNum'),
+    timerVal: document.getElementById('timerVal'),
+    scoreVal: document.getElementById('scoreVal'),
+    highScoreVal: document.getElementById('highScoreVal'),
+    gameBoard: document.getElementById('gameBoard'),
+    startScreen: document.getElementById('startScreen'),
+    startBtn: document.getElementById('startBtn'),
+    sounds: {
+        pop: document.getElementById('popSound'),
+        wrong: document.getElementById('wrongSound'),
+        bg: document.getElementById('bgMusic'),
+        gameOver: document.getElementById('gameOverSound')
+    }
+};
 
-let noClickTimer;
-let NO_CLICK_LIMIT = 3000;
-
-let highlightInterval;
-let particleContainer;
-
-startBtn.addEventListener("click", startGame);
-
-function startGame() {
-  bgMusic.play();
-  score = 0;
-  time = 60;
-
-  scoreElement.textContent = "Score : 0";
-  timeElement.textContent = "Time : 60";
-
-  startBtn.style.display = "none";
-  boardElement.innerHTML = "";
-  particleContainer = document.createElement("div");
-  particleContainer.classList.add("particle-container");
-  boardElement.appendChild(particleContainer);
-
-  newHitNumber();
-  generateBubbles();
-  startTimer();
-  resetNoClickTimer();
-}
-
-function newHitNumber() {
-  currentHit = Math.floor(Math.random() * 10);
-  numberElement.textContent = "Hit Number : " + currentHit;
-}
-
-function resetNoClickTimer() {
-  clearTimeout(noClickTimer);
-  noClickTimer = setTimeout(() => {
-    highlightCorrectBubble();
-  }, NO_CLICK_LIMIT);
-}
-
-function highlightCorrectBubble() {
-  clearInterval(highlightInterval);
-
-  highlightInterval = setInterval(() => {
-    let bubbles = document.querySelectorAll(".bubbles");
-
-    bubbles.forEach((bubble) => {
-      if (Number(bubble.textContent) === currentHit) {
-        bubble.style.boxShadow = "0 0 20px 6px yellow";
-        bubble.style.transform = "scale(1.3)";
-
-        setTimeout(() => {
-          bubble.style.boxShadow = "";
-          bubble.style.transform = "";
-        }, 800);
-      }
+// Initialize
+function init() {
+    elements.highScoreVal.textContent = gameState.highScore;
+    elements.startBtn.addEventListener('click', startGame);
+    window.addEventListener('resize', () => {
+        if (gameState.isPlaying) generateBubbles();
     });
-  }, 3000);
 }
 
-function randomColor() {
-  let gradients = [
-    "linear-gradient(135deg, #ff6b6b, #ee5253)",
-    "linear-gradient(135deg, #ff9f43, #ffc048)",
-    "linear-gradient(135deg, #feca57, #ffeaa7)",
-    "linear-gradient(135deg, #1dd1a1, #10ac84)",
-    "linear-gradient(135deg, #54a0ff, #2e86de)",
-    "linear-gradient(135deg, #5f27cd, #341f97)",
-    "linear-gradient(135deg, #c56cf0, #a55eea)",
-    "linear-gradient(135deg, #8395a7, #57606f)",
-  ];
-  return gradients[Math.floor(Math.random() * gradients.length)];
+// Game Logic
+function startGame() {
+    gameState.isPlaying = true;
+    gameState.score = 0;
+    gameState.time = CONFIG.GAME_DURATION;
+    
+    elements.scoreVal.textContent = gameState.score;
+    elements.timerVal.textContent = gameState.time;
+    elements.startScreen.style.display = 'none';
+    
+    // Play BG music
+    elements.sounds.bg.currentTime = 0;
+    elements.sounds.bg.play().catch(e => console.log('Audio autoplay blocked'));
+
+    newHit();
+    generateBubbles();
+    startTimer();
 }
 
-function generateBubbles() {
-  let existingParticleContainer = boardElement.querySelector(
-    ".particle-container"
-  );
-  boardElement.innerHTML = "";
-  if (existingParticleContainer) {
-    boardElement.appendChild(existingParticleContainer);
-  }
-
-  clearInterval(highlightInterval);
-
-  for (let i = 0; i < 84; i++) {
-    let bubble = document.createElement("div");
-    bubble.classList.add("bubbles");
-
-    bubble.textContent = Math.floor(Math.random() * 10);
-    bubble.style.background = randomColor();
-    bubble.style.animationDelay = `-${Math.random() * 3}s`;
-    bubble.style.animationDuration = `${3 + Math.random() * 2}s`;
-    bubble.addEventListener("click", (event) => {});
-
-    boardElement.appendChild(bubble);
-  }
-
-  resetNoClickTimer();
+function newHit() {
+    gameState.currentHit = Math.floor(Math.random() * 10);
+    elements.hitDisplay.textContent = gameState.currentHit;
+    resetHint();
 }
 
 function startTimer() {
-  timerInterval = setInterval(() => {
-    time--;
-    timeElement.textContent = "Time : " + time;
+    clearInterval(gameState.timerInterval);
+    gameState.timerInterval = setInterval(() => {
+        gameState.time--;
+        elements.timerVal.textContent = gameState.time;
+        
+        if (gameState.time <= 0) {
+            endGame();
+        }
+    }, 1000);
+}
 
-    if (time <= 0) {
-      clearInterval(timerInterval);
-      endGame();
+function generateBubbles() {
+    // Clear board but keep start/end screens if they exist
+    const itemsToRemove = elements.gameBoard.querySelectorAll('.bubble, .end-screen');
+    itemsToRemove.forEach(item => item.remove());
+
+    // Calculate how many bubbles fit
+    const boardWidth = elements.gameBoard.clientWidth;
+    const boardHeight = elements.gameBoard.clientHeight;
+    
+    // Bubble padding + size (approx)
+    const bubbleArea = Math.pow(CONFIG.BUBBLE_SIZE + 10, 2); 
+    const boardArea = boardWidth * boardHeight;
+    
+    let bubbleCount = Math.floor(boardArea / bubbleArea);
+    bubbleCount = Math.max(CONFIG.MIN_BUBBLES, Math.min(bubbleCount, 84));
+
+    const fragment = document.createDocumentFragment();
+    const colors = [
+        'linear-gradient(135deg, #ff6b6b, #ee5253)',
+        'linear-gradient(135deg, #ff9f43, #ffc048)',
+        'linear-gradient(135deg, #feca57, #ffeaa7)',
+        'linear-gradient(135deg, #1dd1a1, #10ac84)',
+        'linear-gradient(135deg, #54a0ff, #2e86de)',
+        'linear-gradient(135deg, #5f27cd, #341f97)',
+        'linear-gradient(135deg, #c56cf0, #a55eea)'
+    ];
+
+    for (let i = 0; i < bubbleCount; i++) {
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        const num = Math.floor(Math.random() * 10);
+        bubble.textContent = num;
+        bubble.style.background = colors[Math.floor(Math.random() * colors.length)];
+        
+        bubble.addEventListener('click', (e) => handleBubbleClick(num, e));
+        fragment.appendChild(bubble);
     }
-  }, 1000);
+    
+    elements.gameBoard.appendChild(fragment);
+}
+
+function handleBubbleClick(num, event) {
+    if (!gameState.isPlaying) return;
+
+    const rect = event.target.getBoundingClientRect();
+    const boardRect = elements.gameBoard.getBoundingClientRect();
+    const x = rect.left + rect.width / 2 - boardRect.left;
+    const y = rect.top + rect.height / 2 - boardRect.top;
+    const color = window.getComputedStyle(event.target).backgroundImage;
+
+    if (num === gameState.currentHit) {
+        // Success
+        gameState.score += CONFIG.SCORE_HIT;
+        playSound('pop');
+        createParticles(x, y, color);
+        
+        // Ripple effect on board (optional)
+        
+        checkHighScore();
+        newHit();
+        generateBubbles();
+    } else {
+        // Fail
+        gameState.score = Math.max(0, gameState.score + CONFIG.SCORE_MISS);
+        playSound('wrong');
+        // Shake animation could be added here
+        event.target.style.animation = 'none';
+        setTimeout(() => event.target.style.animation = 'shake 0.3s', 10);
+    }
+    
+    elements.scoreVal.textContent = gameState.score;
+}
+
+function playSound(type) {
+    const sound = elements.sounds[type];
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+    }
 }
 
 function createParticles(x, y, color) {
-  for (let i = 0; i < 15; i++) {
-    const particle = document.createElement("div");
-    particle.classList.add("particle");
-    particle.style.background = color;
-    particle.style.left = `${x}px`;
-    particle.style.top = `${y}px`;
+    const particleCount = 12;
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.background = color;
+        particle.style.left = `${x}px`;
+        particle.style.top = `${y}px`;
 
-    const angle = Math.random() * 360;
-    const velocity = Math.random() * 15 + 5;
-    const deltaX = velocity * Math.cos((angle * Math.PI) / 180);
-    const deltaY = velocity * Math.sin((angle * Math.PI) / 180);
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 50 + Math.random() * 80;
+        const dx = Math.cos(angle) * dist;
+        const dy = Math.sin(angle) * dist;
 
-    particle.style.setProperty("--dx", `${deltaX}px`);
-    particle.style.setProperty("--dy", `${deltaY}px`);
+        particle.style.setProperty('--dx', `${dx}px`);
+        particle.style.setProperty('--dy', `${dy}px`);
 
-    if (particleContainer) {
-      particleContainer.appendChild(particle);
+        elements.gameBoard.appendChild(particle);
+        particle.addEventListener('animationend', () => particle.remove());
     }
-    particle.addEventListener("animationend", () => {
-      particle.remove();
-    });
-  }
 }
 
-boardElement.addEventListener("click", (event) => {
-  const clickedBubble = event.target.closest(".bubbles");
-  if (!clickedBubble) return;
-
-  clearInterval(highlightInterval);
-  resetNoClickTimer();
-
-  let clickedNumber = Number(clickedBubble.textContent);
-
-  let rect = clickedBubble.getBoundingClientRect();
-  let boardRect = boardElement.getBoundingClientRect();
-  let x = rect.left + rect.width / 2 - boardRect.left;
-  let y = rect.top + rect.height / 2 - boardRect.top;
-  let color = clickedBubble.style.background;
-
-  if (clickedNumber === currentHit) {
-    popSound.play();
-    score += 10;
-    createParticles(x, y, color);
-
-    if (score > highScoreValue) {
-      highScoreValue = score;
-      localStorage.setItem("highScore", JSON.stringify(highScoreValue));
-      document.querySelector(".highScore").textContent = highScoreValue;
+function checkHighScore() {
+    if (gameState.score > gameState.highScore) {
+        gameState.highScore = gameState.score;
+        elements.highScoreVal.textContent = gameState.highScore;
+        localStorage.setItem('bubblePop_highScore', gameState.highScore);
     }
-  } else {
-    wrongSound.play();
-    score -= 5;
-  }
+}
 
-  clickedBubble.style.transform = "scale(1.3)";
-  clickedBubble.style.opacity = "0";
-  setTimeout(() => clickedBubble.remove(), 200);
-
-  scoreElement.textContent = "Score : " + score;
-  setTimeout(() => {
-    generateBubbles();
-    newHitNumber();
-  }, 250);
-});
-
-let highScoreValue = parseInt(localStorage.getItem("highScore")) || 0;
-highScoreText.textContent = "High Score : " + highScoreValue;
+function resetHint() {
+    clearTimeout(gameState.hintTimeout);
+    gameState.hintTimeout = setTimeout(() => {
+        const bubbles = elements.gameBoard.querySelectorAll('.bubble');
+        bubbles.forEach(b => {
+            if (parseInt(b.textContent) === gameState.currentHit) {
+                b.style.boxShadow = '0 0 30px 10px rgba(255, 255, 255, 0.8)';
+                b.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    b.style.boxShadow = '';
+                    b.style.transform = '';
+                }, 1000);
+            }
+        });
+    }, CONFIG.AUTO_HINT_TIME);
+}
 
 function endGame() {
-  bgMusic.pause();
-  gameOverSound.play();
-  bgMusic.currentTime = 0;
+    gameState.isPlaying = false;
+    clearInterval(gameState.timerInterval);
+    clearTimeout(gameState.hintTimeout);
+    elements.sounds.bg.pause();
+    playSound('gameOver');
 
-  clearInterval(timerInterval);
-  clearInterval(highlightInterval);
-  clearTimeout(noClickTimer);
+    // Remove bubbles
+    const bubbles = elements.gameBoard.querySelectorAll('.bubble');
+    bubbles.forEach(b => b.remove());
 
-  boardElement.innerHTML = `
-        <div class="end">
-            <h1 class="game-over-title">Game Over</h1>
-            <h2 class="final-score">Final Score : ${score}</h2>
-            <div class="game-controls">
-                <button class="restart-btn">RESTART </button>
-                <button class="exit-btn">EXIT</button>
+    // Show end screen
+    const endScreen = document.createElement('div');
+    endScreen.className = 'end-screen';
+    endScreen.innerHTML = `
+        <div class="end-card">
+            <h2>Game Over!</h2>
+            <p>Score: <span>${gameState.score}</span></p>
+            <div class="btn-group">
+                <button class="btn" onclick="location.reload()">Home</button>
+                <button class="btn" id="restartBtn">Play Again</button>
             </div>
-        </div>`;
-
-  startBtn.style.display = "block";
-
-  const restartBtn = boardElement.querySelector(".restart-btn");
-  const exitBtn = boardElement.querySelector(".exit-btn");
-
-  restartBtn.addEventListener("click", () => {
-    startBtn.style.display = "none";
-    startGame();
-  });
-
-  exitBtn.addEventListener("click", () => {
-    boardElement.innerHTML = "";
-    boardElement.appendChild(startBtn);
-    startBtn.style.display = "block";
-  });
+        </div>
+    `;
+    elements.gameBoard.appendChild(endScreen);
+    
+    document.getElementById('restartBtn').onclick = () => {
+        endScreen.remove();
+        startGame();
+    };
 }
+
+// Start
+init();

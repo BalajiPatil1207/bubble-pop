@@ -4,7 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bubble Pop Game</title>
+  <title>Bubble Pop | Professional Number Hit Game</title>
+  <meta name="description" content="A fast-paced, professional number hit game with premium glassmorphism design and responsive gameplay.">
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,25 +14,42 @@
 
   <div class="container">
     <div class="card">
+      <!-- Status Section -->
       <div class="top-section">
-        <div class="number">
-          Hit Number : 5
+        <div class="hit-display">
+          HIT
+          <span id="hitNum">0</span>
         </div>
-        <div class="timer">
-          Time : 60
+        <div class="timer-display">
+          TIME
+          <span id="timerVal">60</span>
         </div>
-        <div class="score">
-          Score : 0
+        <div class="score-display">
+          SCORE
+          <span id="scoreVal">0</span>
         </div>
-        <div class="highScore">
-           <span id="highScoreValue">0</span>
+        <div class="high-score-display">
+          BEST
+          <span id="highScoreVal">0</span>
         </div>
       </div>
-      <div class="board-section">
-        <button class="start-btn">START GAME</button>
+
+      <!-- Game Board -->
+      <div class="board-section" id="gameBoard">
+        <!-- Start Screen -->
+        <div class="start-screen" id="startScreen">
+          <h1>Bubble Pop</h1>
+          <button class="btn" id="startBtn">Play Now</button>
+        </div>
       </div>
     </div>
   </div>
+
+  <!-- Audio Assets -->
+  <audio id="popSound" src="pop-402324.mp3"></audio>
+  <audio id="wrongSound" src="wrongnumber.mp3"></audio>
+  <audio id="bgMusic" src="gameSong.mp3" loop></audio>
+  <audio id="gameOverSound" src="game-over.mp3"></audio>
 
   <script src="script.js"></script>
 </body>
