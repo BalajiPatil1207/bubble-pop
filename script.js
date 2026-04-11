@@ -111,17 +111,22 @@ function init() {
 
     if (elements.gameBoard) {
         elements.gameBoard.addEventListener('pointerdown', (e) => {
+            // Only start drag if not clicking a bubble
+            if (e.target.closest('.bubble')) return;
+            
             isDown = true;
             elements.gameBoard.classList.add('active');
             startX = e.pageX - elements.gameBoard.offsetLeft;
             scrollLeft = elements.gameBoard.scrollLeft;
-            elements.gameBoard.setPointerCapture(e.pointerId);
             elements.gameBoard.style.cursor = 'grabbing';
         });
 
-        elements.gameBoard.addEventListener('pointerup', () => {
-            isDown = false;
-            elements.gameBoard.style.cursor = 'grab';
+        window.addEventListener('pointerup', () => {
+            if (isDown) {
+                isDown = false;
+                elements.gameBoard.classList.remove('active');
+                elements.gameBoard.style.cursor = 'grab';
+            }
         });
 
         elements.gameBoard.addEventListener('pointermove', (e) => {
@@ -299,12 +304,13 @@ function generateBubbles(isResize = false) {
     const itemsToRemove = elements.gameBoard.querySelectorAll('.bubble, .end-screen, .bubble-wrapper');
     itemsToRemove.forEach(item => item.remove());
 
-    const virtualWidth = 3500; 
+    const boardWidth = elements.gameBoard.clientWidth || window.innerWidth;
+    const virtualWidth = boardWidth * (window.innerWidth < 600 ? 6 : 5); 
     const boardHeight = elements.gameBoard.clientHeight || 400;
-    const bubbleArea = Math.pow(CONFIG.BUBBLE_SIZE + 20, 2); 
+    const bubbleArea = Math.pow(CONFIG.BUBBLE_SIZE + 15, 2); 
     const boardArea = virtualWidth * boardHeight;
     let bubbleCount = Math.floor(boardArea / bubbleArea);
-    bubbleCount = Math.clamp(bubbleCount, 70, 160);
+    bubbleCount = Math.clamp(bubbleCount, 50, 500); 
 
     const colors = [
         'linear-gradient(135deg, #ff6b6b, #ee5253)',
@@ -319,10 +325,13 @@ function generateBubbles(isResize = false) {
     const bubbleWrapper = document.createElement('div');
     bubbleWrapper.className = 'bubble-wrapper';
     bubbleWrapper.style.display = 'flex';
+    bubbleWrapper.style.flexDirection = 'column'; // Vertical then wrap horizontally
     bubbleWrapper.style.flexWrap = 'wrap';
-    bubbleWrapper.style.width = `${virtualWidth}px`;
-    bubbleWrapper.style.gap = 'clamp(0.8rem, 2vw, 1.5rem)';
-    bubbleWrapper.style.padding = '1.5rem';
+    bubbleWrapper.style.alignContent = 'flex-start'; // Packs columns together tightly
+    bubbleWrapper.style.height = '100%';
+    bubbleWrapper.style.width = 'fit-content';
+    bubbleWrapper.style.gap = window.innerWidth < 600 ? '0.6rem' : '1rem';
+    bubbleWrapper.style.padding = '1rem 2rem';
 
     for (let i = 0; i < bubbleCount; i++) {
         const bubble = document.createElement('div');

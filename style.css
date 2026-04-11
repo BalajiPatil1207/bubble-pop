@@ -70,7 +70,7 @@ body::before {
     display: flex;
     flex-direction: column;
     position: relative;
-    padding: 1rem;
+    padding: clamp(0.5rem, 2vw, 1rem); /* Reduced padding for more room */
 }
 
 .control-panel {
@@ -86,9 +86,13 @@ body::before {
 /* Mobile: move buttons back inside or above when no side space */
 @media (max-width: 1200px) {
     .control-panel {
-        left: 0;
-        top: -65px;
+        position: relative;
+        left: unset;
+        top: unset;
         flex-direction: row;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+        width: 100%;
     }
 }
 
@@ -131,8 +135,8 @@ body::before {
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     padding: clamp(0.75rem, 2vw, 2rem);
-    height: 100%;
-    min-height: 500px;
+    flex: 1; /* Allow card to fill remaining space */
+    min-height: 0; /* Important for flex children */
     border-radius: 2rem;
     border: 1px solid var(--glass-border);
     box-shadow: var(--shadow-lg);
@@ -192,19 +196,18 @@ body::before {
     border-radius: 1.5rem;
     position: relative;
     display: flex;
-    justify-content: flex-start; /* Start from left for scrolling */
-    align-items: center;
-    flex-wrap: wrap; /* Wrap allowed to create rows */
-    gap: clamp(0.6rem, 2vw, 1.2rem);
-    padding: 2rem;
+    justify-content: flex-start;
+    align-items: flex-start; /* Start from top */
+    flex-wrap: nowrap; /* No wrapping of the wrapper */
+    padding: 0; /* Wrapper handles internal padding */
     min-height: 350px;
-    overflow-x: auto; /* Enable horizontal scroll */
+    overflow-x: auto;
     overflow-y: hidden;
     scroll-behavior: smooth;
     border: 1px solid rgba(255, 255, 255, 0.05);
     cursor: grab;
-    user-select: none; /* Prevent text selection during drag */
-    touch-action: pan-x; /* Optimization for mobile swipe */
+    user-select: none;
+    touch-action: pan-x;
 }
 
 .board-section:active {
@@ -363,11 +366,14 @@ body::before {
 .end-screen {
     position: absolute;
     inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    place-items: center;
     z-index: 20;
+    overflow-y: auto; /* Critical for small screens */
+    padding: 2rem 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(8px);
+    border-radius: 1.5rem;
 }
 
 .end-card {
@@ -416,9 +422,10 @@ body::before {
 
 .btn-group {
     display: flex;
-    gap: 1rem;
+    gap: clamp(0.5rem, 2vw, 1rem);
     justify-content: center;
     margin-top: 1rem;
+    width: 100%;
 }
 
 /* --- Animations --- */
@@ -488,5 +495,41 @@ body::before {
     .board-section {
         padding: 0.5rem;
         gap: 0.5rem;
+    }
+
+    /* Game Over Mobile Ultra-Compact */
+    .end-card {
+        padding: 0.8rem;
+        width: 100%;
+        max-width: none;
+    }
+
+    .end-card h2 {
+        font-size: 1.4rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .stats-grid {
+        gap: 0.4rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .stat-item {
+        padding: 0.4rem;
+    }
+
+    .stat-item label {
+        font-size: 0.6rem;
+    }
+
+    .stat-item value {
+        font-size: 1rem;
+    }
+
+    .btn {
+        padding: 0.6rem;
+        font-size: 0.85rem;
+        flex: 1;
+        min-width: 0;
     }
 }
